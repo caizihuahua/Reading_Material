@@ -1,0 +1,9 @@
+[submodule "Learn_NNs/PINNs-TF2.0"]
+	path = Learn_NNs/PINNs-TF2.0
+	url = git@github.com:pierremtb/PINNs-TF2.0.git
+[submodule "Learn_NNs/PINNs"]
+	path = Learn_NNs/PINNs
+	url = git@github.com:maziarraissi/PINNs.git
+[submodule "Learn_NNs/zihaopytorch"]
+	path = Learn_NNs/zihaopytorch
+	url = git@github.com:TommyZihao/zihaopytorch.git
