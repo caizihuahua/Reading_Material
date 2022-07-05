@@ -1,12 +1,3 @@
-"""
-********************************************************************************
-Author: Shota DEGUCHI
-        Yosuke SHIBATA
-        Structural Analysis Laboratory, Kyushu University (Jul. 19th, 2021)
-implementation of PINN - Physics-Informed Neural Network on TensorFlow 2
-********************************************************************************
-"""
-
 import os
 import time
 import datetime
@@ -90,7 +81,7 @@ class PINN(tf.keras.Model):
                                                 activity_regularizer = None, kernel_constraint = None, bias_constraint = None))
         network.add(tf.keras.layers.Dense(out_dim))
         return network
-    
+
     def loss_PDE(self, t, x):
         t = tf.convert_to_tensor(t, dtype = self.data_type)
         x = tf.convert_to_tensor(x, dtype = self.data_type)
@@ -99,14 +90,18 @@ class PINN(tf.keras.Model):
             tp.watch(x)
             # u = [\rho, v, p]
             u = self.dnn(tf.concat([t, x], 1))
-            # \rho_t + \nabla*(\rho*v) = 0
-            # (\rho*v)_t + \nabla*(\rho*u^2+p) = 0
-            rho_t = tp.gradient(u[:,0],t)
-            nabla_rho_v = tp.gradient(u[:,0]*u[:,1],x)
-            rho_v_t = tp.gradient(u[:,0]*u[:,1],t)
-            nabla_rhou2_p = tp.gradient(u[:,0]*(u[:,1]**2)+u[:,2],x)
+            rho = u[:,0][:,None] # tf.convert_to_tensor(u[:,0].numpy().reshape(-1,1),dtype=tf.float32)
+            v = u[:,1][:,None] #tf.convert_to_tensor(u[:,1].numpy().reshape(-1,1),dtype=tf.float32)
+            p = u[:,2][:,None] #tf.convert_to_tensor(u[:,2].numpy().reshape(-1,1),dtype=tf.float32)
+        rho_t = tp.gradient(rho,t)
+        v_t = tp.gradient(v,t)
+        rho_x = tp.gradient(rho,x)
+        v_x = tp.gradient(v,x)
+        p_x = tp.gradient(p,x)
+        equ_1 = rho_t + rho_x*v + rho*v_x
+        equ_2 = (rho_t*v + rho*v_t) + (rho*(2*v*v_x) +(v**2)*rho_x + p_x)
         del tp
-        loss_f = tf.reduce_mean(tf.square(rho_t+nabla_rho_v)+tf.square(rho_v_t+nabla_rhou2_p))
+        loss_f = tf.reduce_mean(tf.square(equ_1)+tf.square(equ_2))
         return loss_f
 
     def loss_nabla_rho(self,t,x):
@@ -116,7 +111,8 @@ class PINN(tf.keras.Model):
             tp.watch(t)
             tp.watch(x)
             u = self.dnn(tf.concat([t, x], 1))
-            rho_x = tp.gradient(u[:,0],x)
+            rho = u[:,0]
+        rho_x = tp.gradient(rho,x)
         rho_x_real = 0.2*np.pi*tf.cos(np.pi*(x-t))
         del tp
         return tf.reduce_mean(tf.square(rho_x-rho_x_real))

@@ -41,10 +41,10 @@ def main():
                 w_init = "glorot_normal", b_init = "zeros", 
                 lr = lr, opt = "Adam")
 
-    # if os.path.exists('./burgers_saved_model'):
+    # if os.path.exists('./inverse_saved_model'):
     #     # 只保留模型dnn，pinn中的其他都未保存
     #     print('load the previous model')
-    #     pinn.dnn = tf.saved_model.load('./burgers_saved_model')   
+    #     pinn.dnn = tf.saved_model.load('./inverse_saved_model')   
     # else:
     pinn.train(epoch, batch, tol)
     plot_loss_log(pinn.ep_log,pinn.loss_log,'train_loss_log')
@@ -67,7 +67,7 @@ def main():
     plot_sol1(TX, u_hat[:,1].numpy(),title='velocity_prediction')
     plot_sol1(TX, u_hat[:,2].numpy(),title='pressure_prediction')
 
-    pinn.dnn.save("burgers_saved_model")
+    pinn.dnn.save("inverse_saved_model")
 
 if __name__ == "__main__":
     main()

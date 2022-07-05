@@ -1,9 +1,14 @@
+"""
+********************************************************************************
+figs
+********************************************************************************
+"""
+
 import numpy as np
 import os
 from scipy.interpolate import griddata
 import matplotlib.pyplot as plt
 
-    
 def plot_sol1(X_star, phi1,title):
     lb = X_star.min(0); ub = X_star.max(0)
     x, y = np.linspace(lb[0], ub[0], 200), np.linspace(lb[1], ub[1], 150); x, y = np.meshgrid(x, y)

@@ -32,4 +32,3 @@ def prp_dataset(tmin, tmax, xmin, xmax, N_nabla_rho,N_p,x_star,N_f):
     x_f = tf.random.uniform((N_f,1), xmin, xmax, dtype = tf.float32)
 
     return t_nabla_rho, x_nabla_rho, t_p, x_p, t_f, x_f
-
