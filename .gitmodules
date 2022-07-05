@@ -7,3 +7,6 @@
 [submodule "Learn_NNs/zihaopytorch"]
 	path = Learn_NNs/zihaopytorch
 	url = git@github.com:TommyZihao/zihaopytorch.git
+[submodule "Learn_NNs/PINN_TF2"]
+	path = Learn_NNs/PINN_TF2
+	url = git@github.com:ShotaDeguchi/PINN_TF2.git
