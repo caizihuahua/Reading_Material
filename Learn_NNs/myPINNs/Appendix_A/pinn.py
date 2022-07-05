@@ -87,16 +87,14 @@ class PINN(tf.keras.Model):
             tp.watch(x)
             # u = [\rho, v, p]
             u = self.dnn(tf.concat([t, x], 1))
-            # \rho_t + \nabla*(\rho*v)
-            # (\rho*v)_t + \nabla*(\rho*u^2+p)
-            rho_t = tp.gradient(u[:,0],t)
-            v_t = tp.gradient(u[:,1],t)
-            rho_x = tp.gradient(u[:,0],x)
-            v_x = tp.gradient(u[:,1],x)
-            p_x = tp.gradient(u[:,2],x)
-        rho = u[:,0][:,None] # tf.convert_to_tensor(u[:,0].numpy().reshape(-1,1),dtype=tf.float32)
-        v = u[:,1][:,None] #tf.convert_to_tensor(u[:,1].numpy().reshape(-1,1),dtype=tf.float32)
-        p = u[:,2][:,None] #tf.convert_to_tensor(u[:,2].numpy().reshape(-1,1),dtype=tf.float32)
+            rho = u[:,0][:,None] # tf.convert_to_tensor(u[:,0].numpy().reshape(-1,1),dtype=tf.float32)
+            v = u[:,1][:,None] #tf.convert_to_tensor(u[:,1].numpy().reshape(-1,1),dtype=tf.float32)
+            p = u[:,2][:,None] #tf.convert_to_tensor(u[:,2].numpy().reshape(-1,1),dtype=tf.float32)
+        rho_t = tp.gradient(rho,t)
+        v_t = tp.gradient(v,t)
+        rho_x = tp.gradient(rho,x)
+        v_x = tp.gradient(v,x)
+        p_x = tp.gradient(p,x)
         equ_1 = rho_t + rho_x*v + rho*v_x
         equ_2 = (rho_t*v + rho*v_t) + (rho*(2*v*v_x) +(v**2)*rho_x + p_x)
         del tp
@@ -113,12 +111,18 @@ class PINN(tf.keras.Model):
             tp.watch(x_l)
             u_u = self.dnn(tf.concat([t, x_u], 1))
             u_l = self.dnn(tf.concat([t, x_l], 1))
-            rho_x_u = tp.gradient(u_u[:,0],x_u)
-            v_x_u = tp.gradient(u_u[:,1],x_u)
-            p_x_u = tp.gradient(u_u[:,2],x_u)
-            rho_x_l = tp.gradient(u_l[:,0],x_l)
-            v_x_l = tp.gradient(u_l[:,1],x_l)
-            p_x_l = tp.gradient(u_l[:,2],x_l)
+            rho_u = u_u[:,0]
+            v_u = u_u[:,1]
+            p_u = u_u[:,2]
+            rho_l = u_l[:,0]
+            v_l = u_l[:,1]
+            p_l = u_l[:,2]
+        rho_x_u = tp.gradient(rho_u,x_u)
+        v_x_u = tp.gradient(v_u,x_u)
+        p_x_u = tp.gradient(p_u,x_u)
+        rho_x_l = tp.gradient(rho_l,x_l)
+        v_x_l = tp.gradient(v_l,x_l)
+        p_x_l = tp.gradient(p_l,x_l)
         nabla_u_loss = tf.square(rho_x_u-rho_x_l)+tf.square(v_x_u-v_x_l)+tf.square(p_x_u-p_x_l)
         u_loss = tf.square(u_u[:,0][:,None]-u_l[:,0][:,None])+tf.square(u_u[:,1][:,None]-u_l[:,1][:,None])+tf.square(u_u[:,2][:,None]-u_l[:,2][:,None])
         del tp
