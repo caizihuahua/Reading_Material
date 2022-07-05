@@ -131,7 +131,7 @@ class PINN(tf.keras.Model):
         x = tf.convert_to_tensor(x, dtype = self.data_type)
         u_pre = tf.convert_to_tensor(u,dtype = self.data_type)
         u = self.dnn(tf.concat([t, x], 1))
-        return tf.reduce_mean(tf.square(u-u_pre))
+        return tf.reduce_mean(tf.square(u[:,2][:None]-u_pre))
     
     @tf.function
     def grad_desc(self,
@@ -163,9 +163,12 @@ class PINN(tf.keras.Model):
             idx_f = np.random.permutation(n_r)
             for idx in range(0, n_r, batch):
                 # batch for domain residual
-                
                 t_f_btch = tf.convert_to_tensor(t_f[idx_f[idx: idx + batch if idx + batch < n_r else n_r]], dtype = self.data_type)
                 x_f_btch = tf.convert_to_tensor(x_f[idx_f[idx: idx + batch if idx + batch < n_r else n_r]], dtype = self.data_type)
+                # self.loss_PDE(t_f_btch,x_f_btch)
+                # self.loss_nabla_rho(self.t_nabla_rho,self.x_nabla_rho)
+                # self.loss_p_star(self.t_p,self.x_p,self.u_p)
+                # self.loss_mass()
                 loss_btch = self.grad_desc(self.t_nabla_rho, self.x_nabla_rho,
                                             self.t_p, self.x_p, self.u_p,
                                             t_f_btch, x_f_btch)
