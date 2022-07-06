@@ -1,12 +1,3 @@
-"""
-********************************************************************************
-Author: Shota DEGUCHI
-        Yosuke SHIBATA
-        Structural Analysis Laboratory, Kyushu University (Jul. 19th, 2021)
-implementation of PINN - Physics-Informed Neural Network on TensorFlow 2
-********************************************************************************
-"""
-
 import os
 import time
 import datetime
