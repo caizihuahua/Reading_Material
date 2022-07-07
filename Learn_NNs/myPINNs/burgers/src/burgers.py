@@ -62,6 +62,7 @@ def main():
     plot_sol1(TX, u_hat.numpy(),title='prediction')
     plot_sol1(TX, f.numpy(),title='Euler equation loss')
 
+    a = 0
     # pinn.dnn.save("burgers_saved_model")
 
 if __name__ == "__main__":

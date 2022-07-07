@@ -12,7 +12,7 @@ class PINN(tf.keras.Model):
                  in_dim, out_dim, width, depth, activ = "tanh", 
                  w_init = "glorot_normal", b_init = "zeros", 
                  lr = 1e-3, opt = "Adam",
-                 freq_info = 10, r_seed = 1234):
+                 freq_info = 100, r_seed = 1234):
         # initialize the configuration
         super().__init__()
         self.r_seed = r_seed

@@ -26,9 +26,6 @@ def prp_grd(tmin, tmax, nt,
 def prp_dataset(tmin, tmax, xmin, xmax, N_0, N_b, N_r):
     lb = tf.constant([tmin, xmin], dtype = tf.float32)
     ub = tf.constant([tmax, xmax], dtype = tf.float32)
-    print("lower bound", lb)
-    print("upper bound", ub)
-
     t_0 = tf.ones((N_0, 1), dtype = tf.float32) * lb[0]
     x_0 = tf.random.uniform((N_0, 1), lb[1], ub[1], dtype = tf.float32)
     t_b = tf.random.uniform((N_b, 1), lb[0], ub[0], dtype = tf.float32)
