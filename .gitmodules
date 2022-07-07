@@ -10,3 +10,6 @@
 [submodule "Learn_NNs/PINN_TF2"]
 	path = Learn_NNs/PINN_TF2
 	url = git@github.com:ShotaDeguchi/PINN_TF2.git
+[submodule "Learn_NNs/W-PINNs-DE"]
+	path = Learn_NNs/W-PINNs-DE
+	url = git@github.com:alexpapados/Physics-Informed-Deep-Learning-Solid-and-Fluid-Mechanics.git
