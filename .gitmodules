@@ -13,3 +13,9 @@
 [submodule "Learn_NNs/W-PINNs-DE"]
 	path = Learn_NNs/W-PINNs-DE
 	url = git@github.com:alexpapados/Physics-Informed-Deep-Learning-Solid-and-Fluid-Mechanics.git
+[submodule "torch/PINNs"]
+	path = torch/PINNs
+	url = git@github.com:jayroxis/PINNs.git
+[submodule "torch/Physics-Informed-Neural-Networks"]
+	path = torch/Physics-Informed-Neural-Networks
+	url = git@github.com:omniscientoctopus/Physics-Informed-Neural-Networks.git
