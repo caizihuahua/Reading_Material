@@ -20,3 +20,9 @@ Article B introduces additional diffusion term to increase the abbility of PINNs
 1.4 0.1 1.0 》1.0 0.1 1.0  （0，1）0.5 -》（-2.6175，2.5） 左大
 1.0 0.0 1.0 》0.125 0.0 0.1 （0，1）0.5 -》（-1.5，3.125）右大
 0.125 0.0 0.1《1.0 0.0 1.0 （0，1）0.5 -》（-2.625，2.5）左大
+
+国际数学家大会 e维南
+流体力学 书籍
+patel等人的作品
+14号会议，薛定谔的会议
+deep ritz
