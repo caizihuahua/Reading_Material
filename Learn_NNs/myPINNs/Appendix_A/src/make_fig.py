@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
     
 def plot_sol1(X_star, phi1,title):
     lb = X_star.min(0); ub = X_star.max(0)
-    x, y = np.linspace(lb[0], ub[0], 200), np.linspace(lb[1], ub[1], 150); x, y = np.meshgrid(x, y)
+    x, y = np.linspace(lb[0], ub[0], 200), np.linspace(lb[1], ub[1], 150);
+    x, y = np.meshgrid(x, y)
     PHI_I = griddata(X_star, phi1.flatten(), (x, y), method = "linear")
     plt.figure(figsize = (6, 8))
     plt.imshow(PHI_I, interpolation='nearest',cmap='rainbow', extent=[0,1,-1,1], origin='lower', aspect='auto')
