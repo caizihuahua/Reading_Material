@@ -195,15 +195,15 @@ class PINN(tf.keras.Model):
         print(">>>>> end time:", datetime.datetime.now())
 
     def predict(self,t,x):
-        with tf.GradientTape() as tp:
-            with tf.GradientTape() as tp2:
-                tp.watch(t)
-                tp.watch(x)
-                u = self.dnn(tf.concat([t,x],1))
-            u_t = tp2.gradient(u,t)
-            u_x = tp2.gradient(u,x)
-        u_xx = tp.gradient(u_x,x)
-        del tp,tp2
+        t = tf.convert_to_tensor(t,dtype=self.data_type)
+        x = tf.convert_to_tensor(x,dtype=self.data_type)
+        with tf.GradientTape(persistent=True) as tp:
+            tp.watch(self.t)
+            tp.watch(self.x)
+            u = self.dnn(tf.concat([self.t,self.x],1))
+            u_t = tp.gradient(u,self.t)
+            u_x = tp.gradient(u,self.x)
+        u_xx = tp.gradient(u_x,self.x)
         gv = u_t + u * u_x - self.nu * u_xx
         r = tf.reduce_mean(tf.square(gv))
         return u,r
@@ -215,4 +215,30 @@ pinn = PINN(t,x,u,t_r,x_r,lb,ub,
             lr=1e-3,opt=opt,weight_data=1.,weight_pde=1.,
             info_freq=100,info_seed=1234)
 
-pinn.train(epoch,tol)
+pinn.train(epoch=80,tol=1e-7)
+
+def plot_solution(X,u,title,savepath="./pics"):
+    lb = X.min(0)
+    ub = X.max(0)
+    x = np.linspace(lb[0],ub[0],200)
+    y = np.linspace(lb[1],ub[1],200)
+    x,y = np.meshgrid(x,y)
+    phi = griddata(X,u.flatten(),(x,y),method="linear")
+    plt.imshow(phi,interpolation='nearest',camp='rainbow',extent=[0,1-1,1],origin="lower",aspect="auto")
+    plt.colorbar()
+    plt.title(title)
+    plt.xlabel('t')
+    plt.ylabel('x')
+    if not os.path.exists(savepath):
+        os.makedirs(savepath)
+    plt.savefig(savepath+'/'+title)
+
+t = np.linspace(tmin,tmax,10)
+x = np.linspace(xmin,xmax,10)
+
+t,x = np.meshgrid(t,x)
+t = t.reshape(-1, 1)
+x = x.reshape(-1, 1)
+TX = np.c_[t,x]
+
+u_hat,r_hat = pinn.predict(t,x)
