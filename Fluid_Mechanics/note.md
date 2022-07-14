@@ -80,3 +80,22 @@ q：热流密度
 <img src="pics/incompressible_fluid_equation.jpg" style="zoom:40%;" />
 
 <img src="pics/some_fluid_equation.jpg" style="zoom:40%;" />
+
+
+
+
+$$
+\partial_t U + \nabla\cdot f(U)=0, \quad  x\in\Omega\subset\mathbb{R},t\in(0,T] \\
+
+U = \begin{bmatrix}
+\rho \\
+\rho u
+\end{bmatrix}
+
+\quad
+
+f(U) = \begin{pmatrix}
+\rho u\\
+\rho u^2 +p 
+\end{pmatrix}
+$$
