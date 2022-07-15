@@ -87,7 +87,8 @@ class PINN(tf.keras.Model):
 
     def loss_icbc(self):
         u_nn = self.dnn(tf.concat([self.t,self.x],1))
-        return tf.reduce_mean(tf.square(self.u-u_nn))
+        loss = tf.reduce_mean(tf.square(self.u-u_nn))
+        return loss
 
     @tf.function
     def grad_desc(self):
@@ -154,7 +155,7 @@ b_init = "zeros"
 act = "tanh"
 
 lr = tf.keras.optimizers.schedules.CosineDecay(
-    initial_learning_rate = 4e-3,
+    initial_learning_rate = 5e-3,
     decay_steps = epoch,
     alpha = 1e-2
 )
@@ -206,92 +207,14 @@ pinn_clus = PINN(
             act,w_init,b_init,
             lr,opt,info_seed)
 
+pinn_clus.train(epoch,tol,info_freq)
 
 pinn_rand = PINN(t,x,u,t_r_rand,x_r_rand,lb,ub,
             in_dim,out_dim,width,depth,
             act,w_init,b_init,
             lr,opt,info_seed)
 
-def plot_solution(X,u,savepath="./pics"):
-    lb = X.min(0)
-    ub = X.max(0)
-    x = np.linspace(lb[0],ub[0],200)
-    y = np.linspace(lb[1],ub[1],200)
-    x,y = np.meshgrid(x,y)
-    phi_1 = griddata(X,u[:,0].numpy().flatten(),(x,y),method="linear")
-    phi_2 = griddata(X,u[:,1].numpy().flatten(),(x,y),method="linear")
-    phi_3 = griddata(X,u[:,2].numpy().flatten(),(x,y),method="linear")
-
-    if not os.path.exists(savepath):
-        os.makedirs(savepath)
-    plt.figure(figsize=(6,8))
-    plt.imshow(phi_1,interpolation='nearest',cmap='rainbow',extent=[0,1,-1,1],origin="lower",aspect="auto")
-    plt.colorbar()
-    plt.title("density prediction")
-    plt.xlabel('t')
-    plt.ylabel('x')
-    plt.savefig(savepath+"/density prediction")
-
-    plt.figure(figsize=(6,8))
-    plt.imshow(phi_2,interpolation='nearest',cmap='rainbow',extent=[0,1,-1,1],origin="lower",aspect="auto")
-    plt.colorbar()
-    plt.title("velocity prediction")
-    plt.xlabel('t')
-    plt.ylabel('x')
-    plt.savefig(savepath+"/velocity prediction")
-
-    plt.figure(figsize=(6,8))
-    plt.imshow(phi_3,interpolation='nearest',cmap='rainbow',extent=[0,1,-1,1],origin="lower",aspect="auto")
-    plt.colorbar()
-    plt.title("pressure prediction")
-    plt.xlabel('t')
-    plt.ylabel('x')
-    plt.savefig(savepath+"/pressure prediction")
-    
-def plot_final(X,u,final_t,savepath="./pics"):
-    if not os.path.exists(savepath):
-        os.makedirs(savepath)
-    index = np.array([ [i,x[1]] for i,x in enumerate(TX) if x[0]==final_t])
-    density_clus = [u[0][:,0][int(i)] for i in index[:,0]]
-    density_rand = [u[0][:,0][int(i)] for i in index[:,0]]
-    velocity_clus = [u[1][:,1][int(i)] for i in index[:,0]]
-    velocity_rand = [u[1][:,1][int(i)] for i in index[:,0]]
-    pressure_clus = [u[1][:,2][int(i)] for i in index[:,0]]
-    pressure_rand = [u[1][:,2][int(i)] for i in index[:,0]]
-    xx = index[:,1]
-
-    fig1,ax1 = plt.subplots(1)
-    ax1.set_title(f"density(t={final_t})")
-    ax1.set_xlabel('x')
-    ax1.set_ylabel('density')
-    ax1.plot(xx,density_clus,"*",label="Clus NN")
-    ax1.plot(xx,density_rand,"o",color="orange",label="Rand NN",markersize=3)
-    yy = np.array([1.4 if item<0.5+final_t else 1.0 for item in xx])
-    ax1.plot(xx,yy,color="r",label='exact')
-    ax1.legend(loc="upper right")
-    fig1.savefig(f"{savepath}/density(t={final_t}).png")
-
-    fig2,ax2 = plt.subplots(1)
-    ax2.set_title(f"velocity(t={final_t})")
-    ax2.set_xlabel('x')
-    ax2.set_ylabel('velocity')
-    ax2.plot(xx,velocity_clus,"*",label="Clus NN")
-    ax2.plot(xx,velocity_rand,"o",color="orange",label="Rand NN",markersize=3)
-    ax2.plot(xx,np.ones(len(xx)),color="r",label="exact")
-    ax2.legend(loc="upper right")
-    ax2.axis(ymin=0.95,ymax=1.05)
-    fig2.savefig(f"{savepath}/velocity(t={final_t}.png")
-
-    fig3,ax3 = plt.subplots(1)
-    ax3.set_title(f"pressure(t={final_t})")
-    ax3.set_xlabel('x')
-    ax3.set_ylabel('pressure')
-    ax3.plot(xx,pressure_clus,"*",label="Clus NN")
-    ax3.plot(xx,pressure_rand,"o",color="orange",label="Rand NN",markersize=3)
-    ax3.plot(xx,np.ones(len(xx)),color="r",label="exact")
-    ax3.legend(loc="upper right")
-    ax3.axis(ymin=0.95,ymax=1.05)
-    fig3.savefig(f"{savepath}/pressure(t={final_t}).png")
+pinn_rand.train(epoch,tol,info_freq)
 
 t = np.linspace(tmin,tmax,1001)
 x = np.linspace(xmin,xmax,101)
@@ -304,4 +227,57 @@ u_clus,r_clus = pinn_clus.predict(t,x)
 u_rand,r_rand = pinn_rand.predict(t,x)
 u = [u_clus,u_rand]
 
-plot_final(TX,u,tmax)
+X = TX
+lb = X.min(0)
+ub = X.max(0)
+x = np.linspace(lb[0],ub[0],200)
+y = np.linspace(lb[1],ub[1],200)
+x,y = np.meshgrid(x,y)
+
+def plot_solution(X,u,savepath="./pics"):
+    lb = X.min(0)
+    ub = X.max(0)
+    x = np.linspace(lb[0],ub[0],200)
+    y = np.linspace(lb[1],ub[1],200)
+    x,y = np.meshgrid(x,y)
+    density_clus = griddata(X,u[0][:,0].numpy().flatten(),(x,y),method="linear")
+    density_rand = griddata(X,u[0][:,0].numpy().flatten(),(x,y),method="linear")
+    velocity_clus = griddata(X,u[0][:,1].numpy().flatten(),(x,y),method="linear")
+    velocity_rand = griddata(X,u[1][:,1].numpy().flatten(),(x,y),method="linear")
+    pressure_clus = griddata(X,u[0][:,2].numpy().flatten(),(x,y),method="linear")
+    pressure_rand = griddata(X,u[1][:,2].numpy().flatten(),(x,y),method="linear")
+
+    if not os.path.exists(savepath):
+        os.makedirs(savepath)
+    fig1,ax1 =plt.subplots(1,2)
+    img1 = plt.imshow(density_clus,interpolation='nearest',cmap='rainbow',extent=[0,1,0,1],origin="lower",aspect="auto")
+    img2 = plt.imshow(density_rand,interpolation='nearest',cmap='rainbow',extent=[0,1,0,1],origin="lower",aspect="auto")
+    plt.colorbar(img1,ax=ax1[0])
+    plt.colorbar(img2,ax=ax1[1])
+    ax1[0].title("Clus density")
+    ax1[0].xlabel('t')
+    ax1[0].ylabel('x')
+    plt.savefig(savepath+"/clus density")
+
+    fig2,ax2 =plt.subplots(1,2)
+    img1 = plt.imshow(velocity_clus,interpolation='nearest',cmap='rainbow',extent=[0,1,0,1],origin="lower",aspect="auto")
+    img2 = plt.imshow(velocity_rand,interpolation='nearest',cmap='rainbow',extent=[0,1,0,1],origin="lower",aspect="auto")
+    plt.colorbar(img1,ax=ax2[0])
+    plt.colorbar(img2,ax=ax2[1])
+    ax2[0].title("Clus velocity")
+    ax2[0].xlabel('t')
+    ax2[0].ylabel('x')
+    plt.savefig(savepath+"/clus velocity")
+
+    fig3,ax3 =plt.subplots(1,2)
+    img1 = plt.imshow(pressure_clus,interpolation='nearest',cmap='rainbow',extent=[0,1,0,1],origin="lower",aspect="auto")
+    img2 = plt.imshow(pressure_rand,interpolation='nearest',cmap='rainbow',extent=[0,1,0,1],origin="lower",aspect="auto")
+    plt.colorbar(img1,ax=ax3[0])
+    plt.colorbar(img2,ax=ax3[1])
+    ax3[0].title("Clus pressure")
+    ax3[0].xlabel('t')
+    ax3[0].ylabel('x')
+    plt.savefig(savepath+"/clus pressure")
+    
+
+plot_solution(TX,u)
