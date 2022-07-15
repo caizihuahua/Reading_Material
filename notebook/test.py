@@ -10,7 +10,7 @@ class PINN(tf.keras.Model):
             t_i,x_i,u_i,t_b,x_b,t_r,x_r,lb,ub,
             in_dim,out_dim,width,depth,
             activ="tanh",w_init="glorot_normal",b_init="zeros",
-            lr=1e-3,opt="Adam",weight_data=1.,weight_pde=1.,
+            lr=1e-3,opt="Adam",
             info_seed=1234):
         super().__init__()
         # information
@@ -20,7 +20,6 @@ class PINN(tf.keras.Model):
         self.x_i = tf.convert_to_tensor(x_i,dtype=self.data_type)
         self.t_i = tf.convert_to_tensor(t_i,dtype=self.data_type)
         self.u_i = tf.convert_to_tensor(u_i,dtype=self.data_type)
-        # self.u_i = tf.cast(u_i,dtype=self.data_type)
         self.x_b = tf.convert_to_tensor(x_b,dtype=self.data_type)
         self.t_b = tf.convert_to_tensor(t_b,dtype=self.data_type)
         # pde loss train point = inner + outer(initial+boundary)
@@ -30,7 +29,6 @@ class PINN(tf.keras.Model):
         self.t_r = tf.convert_to_tensor(t_r,dtype=self.data_type)
         self.lb = tf.convert_to_tensor(lb,dtype=self.data_type)
         self.ub = tf.convert_to_tensor(ub,dtype=self.data_type)
-        self.nu = tf.constant(0.01/np.pi,dtype=self.data_type)
         # neuron network configuration
         self.in_dim = in_dim
         self.out_dim = out_dim
@@ -41,8 +39,6 @@ class PINN(tf.keras.Model):
         self.b_init = b_init
         self.lr = lr
         self.opt = opt
-        self.weight_data = weight_data
-        self.weight_pde = weight_pde
         
         # call
         self.dnn = self.dnn_init(in_dim,out_dim,width,depth)
@@ -100,28 +96,27 @@ class PINN(tf.keras.Model):
         xmin_index = [i for i,x in enumerate(self.x_b.numpy()) if x==self.lb[1]]
         xmin_t = tf.convert_to_tensor([self.t_b[i] for i in xmin_index],dtype=self.data_type)
         xmin_x = tf.convert_to_tensor([self.x_b[i] for i in xmin_index],dtype=self.data_type)
-        xmin_u = tf.convert_to_tensor([self.u_b[i] for i in xmin_index],dtype=self.data_type)
         # boundary xmax
-        xmin_index = [i for i,x in enumerate(self.x_b.numpy()) if x==self.ub[1]]
+        xmax_index = [i for i,x in enumerate(self.x_b.numpy()) if x==self.ub[1]]
         xmax_t = tf.convert_to_tensor([self.t_b[i] for i in xmax_index],dtype=self.data_type)
         xmax_x = tf.convert_to_tensor([self.x_b[i] for i in xmax_index],dtype=self.data_type)
-        xmax_u = tf.convert_to_tensor([self.u_b[i] for i in xmax_index],dtype=self.data_type)
+        # xmax_u = tf.convert_to_tensor([self.u_b[i] for i in xmax_index],dtype=self.data_type)
         
         with tf.GradientTape(persistent=True) as tp:
             tp.watch(xmin_x)
             tp.watch(xmax_x)
             u_nn_xmin = self.dnn(tf.concat([xmin_t,xmin_x],1))
             u_nn_xmax = self.dnn(tf.concat([xmax_t,xmax_x],1))
-        tmp1 = tp.gradient(u_nn_xmax,xmax)
-        tmp2 = tp.gradient(u_nn_xmin,xmin)
+        tmp1 = tp.gradient(u_nn_xmax,xmax_x)
+        tmp2 = tp.gradient(u_nn_xmin,xmin_x)
         loss_b1 = tf.reduce_mean(tf.square(u_nn_xmax-u_nn_xmin))
         loss_b2 = tf.reduce_mean(tf.square(tmp1-tmp2))
         return loss_b1+loss_b2
-    
+
     @tf.function
     def grad_desc(self):
         with tf.GradientTape() as tp:
-            loss = self.loss_pde() + self.loss_ic() + self.loss_ic()
+            loss = self.loss_pde() + self.loss_ic() + self.loss_bc()
         grad = tp.gradient(loss,self.params)
         del tp
         self.optimizer.apply_gradients(zip(grad,self.params))
@@ -131,6 +126,9 @@ class PINN(tf.keras.Model):
         print(">>>>> training setting;")
         print("         # of epoch     :", epoch)
         print("         convergence tol:", tol)
+        self.loss_pde()
+        self.loss_ic()
+        self.loss_bc()
         t0 = time.time()
         for ep in range(epoch+1):
             ep_loss = self.grad_desc()
@@ -165,13 +163,12 @@ class PINN(tf.keras.Model):
         equ_2 = (rho_t*v + rho*v_t) + (rho*(2*v*v_x) +(v**2)*rho_x + p_x)
         gv = tf.square(equ_1)+tf.square(equ_2)
         return u,gv
-
 in_dim = 2
 out_dim = 3
 width = 20
 depth = 7
 
-epoch = 8000
+epoch = 18000
 tol = 1e-8
 
 N_0 = 50
@@ -183,7 +180,7 @@ b_init = "zeros"
 act = "tanh"
 
 lr = tf.keras.optimizers.schedules.CosineDecay(
-    initial_learning_rate = 5e-3,
+    initial_learning_rate = 4e-3,
     decay_steps = epoch,
     alpha = 1e-2
 )
@@ -192,8 +189,6 @@ opt = "Adam"
 info_freq = 500
 info_seed = 1234
 
-weight_data = 1.
-weight_pde = 1.
 
 print("python    :", sys.version)
 print("tensorflow:", tf.__version__)
@@ -214,34 +209,10 @@ x_r = tf.random.uniform((N_r, 1), lb[1], ub[1], dtype = tf.float32)
 
 u_0 = tf.convert_to_tensor([[1.+0.2*np.sin(np.pi*a),1.,1.] for a in x_0.numpy().flatten()],dtype=tf.float32)
 
+
 pinn = PINN(t_0,x_0,u_0,t_b,x_b,t_r,x_r,lb,ub,
             in_dim,out_dim,width,depth,
             act,w_init,b_init,
-            lr,opt,weight_data,weight_pde,
-            info_seed)
+            lr,opt,info_seed)
 
-def plot_solution(X,u,savepath="./pics"):
-    lb = X.min(0)
-    ub = X.max(0)
-    x = np.linspace(lb[0],ub[0],200)
-    y = np.linspace(lb[1],ub[1],200)
-    x,y = np.meshgrid(x,y)
-    phi = griddata(X,u[:0].numpy().flatten().reshape(-1,1),(x,y),method="linear")
-    plt.imshow(phi,interpolation='nearest',cmap='rainbow',extent=[0,1,-1,1],origin="lower",aspect="auto")
-    plt.colorbar()
-    plt.title("density prediction")
-    plt.xlabel('t')
-    plt.ylabel('x')
-    if not os.path.exists(savepath):
-        os.makedirs(savepath)
-    plt.savefig(savepath+'/'+title)
-
-t = np.linspace(tmin,tmax,1001)
-x = np.linspace(xmin,xmax,101)
-
-t,x = np.meshgrid(t,x)
-t = t.reshape(-1, 1)
-x = x.reshape(-1, 1)
-TX = np.c_[t,x]
-u_hat,r_hat = pinn.predict(t,x)
-plot_solution(TX, u_hat)
+pinn.train(epoch,tol,info_freq)
