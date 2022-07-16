@@ -1,5 +1,12 @@
 ## 使用神经网络捕捉激波
 
+
+
+\begin{aligned}
+& U(-1,t) = U(1,t), \quad \nabla U(-1,t) = \nabla U(1,t) \\
+& U_0=(\rho_0,u_0,p_0)=(1.0+0.2\sin(\pi x),1.0,1.0)
+\end{aligned}
+
 所考虑的问题是流体力学中无粘可压缩的流动，该流动可用欧拉方程来描述：
 $$
 \partial_tU+\nabla\cdot f(U)=0, \quad x\in\Omega\subset\mathbb{R}^d, \quad d=1,2, \quad t\in(0,T]
@@ -98,7 +105,9 @@ $$
 = 0
 $$
 考虑空间为 $(0,1)$，边值 $BC$ 为 Dirichlet 边值条件
-
+$$
+U(0,t)=(1.4,0.1,1.0), \quad U(1,t)=(1.0,0.1,1.0)
+$$
 初值 $IC$：
 $$
 (\rho_L,u_L,p_L) = (1.4,0.1,1.0), \quad (\rho_r,u_r,p_r) = (1.0,0.1,1.0)
@@ -131,3 +140,35 @@ $$
 Error_\rho := || \rho(x,2)-\rho_{nn}(x,2)||_{L^2}/ || \rho(x,2)||_{L^2}
 $$
 ![image-20220716233426825](pics\forward_problem_ex1_error.png)
+
+### 2. 增加额外的损失函数，全局调整损失函数权重
+
+#### 逆问题（inverse problem, 不知道初边值，只知道某些数据）
+
+这里我们考虑已知的数据为：某些点处的 $\nabla\rho(x,t)$ 和 $p(x^*,t)$
+$$
+Loss = MSE_{\nabla\rho}+MSE_{p^*}+MSE_{pde}
+$$
+![image-20220716234224455](pics\inverse_problem_MSE.png)
+
+![image-20220717000227396](pics\inverse_problem_nabla_rho_loss.png)
+
+其中 $x^*$ 是预先已知的。
+
+可是通过这三个损失函数拟合出来的结果不太好。
+
+比如对于如下解的问题
+$$
+U=(\rho,u,p)=(1.0+0.2\sin(\pi (x-t)),1.0,1.0)
+$$
+训练完后作图， $t=0$ 
+
+![image-20220716234845814](pics\inverse_problem_ex6.png)
+$$
+Loss = MSE_{\nabla\rho}+MSE_{p^*}+MSE_{pde} + MSE_{mass_0}
+$$
+
+$$
+MSE_{mass_0} = (\int_\Omega\rho_{nn}(x,0)dx - \int_\Omega\rho_0(x)dx)^2
+$$
+
