@@ -48,17 +48,9 @@ pu_i+\rho u_i E
 \quad i=1,2
 $$
 
-我们还需要一个方程来封闭这个问题，比如说 理想状态的气体方程。但是这里我们并不考虑温度和热量问题。
+我们还需要一个方程来封闭这个问题
 $$
-\partial_t \begin{pmatrix}
-\rho \\
-\rho u
-\end{pmatrix}
-+\nabla \cdot \begin{pmatrix}
-\rho u \\
-\rho u^2+p
-\end{pmatrix}
-= 0
+p = (\gamma-1)(\rho E-\frac{1}{2}\rho||u||^2), \quad \gamma=1.4
 $$
 
 
@@ -153,6 +145,8 @@ $$
 
 ![image-20220717000227396](pics\inverse_problem_nabla_rho_loss.png)
 
+![](pics\inverse_problem_sample_points.png)
+
 其中 $x^*$ 是预先已知的。
 
 可是通过这三个损失函数拟合出来的结果不太好。
@@ -172,3 +166,70 @@ $$
 MSE_{mass_0} = (\int_\Omega\rho_{nn}(x,0)dx - \int_\Omega\rho_0(x)dx)^2
 $$
 
+![image-20220717082004410](pics\inverse_problem_ex3.png)
+$$
+Loss = \omega_{\nabla\rho}MSE_{\nabla\rho}+\omega_{p^*}MSE_{p^*}+\omega_{m_0}MSE_{mass_0}+\omega_{ped}MSE_{pde}
+$$
+
+$$
+\omega_{\nabla\rho}=\omega_{pde}=0.1, \quad \omega_{p^*}+\omega_{m_0}=1.0, \quad dx=0.008, \\
+N_{\nabla\rho}=2334, \quad N_{pde}=3338, \quad N_{p^*}=200,\quad x^*=2.5
+$$
+
+4层中间层，每层120个神经元，Adam算法，初始时刻学习率0.0005，8 000步。然后L-BGGS-B迭代200 000步
+
+![image-20220717082745387](pics\inverse_problem_ex3_results.png)
+
+现在考虑
+$$
+Loss = \omega_{\nabla\rho}MSE_{\nabla\rho}+\omega_{p^*}MSE_{p^*}+\omega_{m_0}MSE_{mass_0}+\omega_{ped}MSE_{pde}+\omega_{Mom}MSE_{Mom}
+$$
+![image-20220717083224100](pics\inverse_problem_momentum_loss.png)
+
+![image-20220717083329146](pics\inverse_problem_ex3_results_pro.png)
+
+So we suggest to choose the point $x^*$ from the domain that is between the initial discontinuous point and the shock point at the final time.
+
+> 使用经典形式的欧拉方程 （in characteristic form）
+
+$$
+U_t+AU_x=0, \quad A(U)=\frac{\partial f}{\partial U}
+$$
+
+$$
+LU_t+DLU_x = 0
+$$
+
+![image-20220717083959552](pics\euler_in_characteristic_form.png)
+$$
+Loss_{pde} = ||LU_t+DLU_x||
+$$
+
+$$
+Loss = MSE_{\nabla\rho}+MSE_{p^*}+MSE_{mass_0}+MSE_{pde}+MSE_{Mom}
+$$
+
+3*120，Adam lr=0.0005 12 000steps + L-BFGS-B 200 000steps
+
+![image-20220717084333298](pics\euler_in_characteristic_form_results.png)
+
+### 对于 shock-tube 问题
+
+![image-20220717091121451](pics\problem_setting.png)
+
+![image-20220717090541956](pics\shock_tube_problem.png)
+
+考虑的都是正问题（已知初边值），采样1000*1000，
+
+The Euler equations are of hyperbolic type which means that it, in essence, propagates the initial condition through the domain.
+$$
+Loss = w_{ib}Loss_{IC/BC}+w_{pde}Loss_{pde}, \\
+0\le Loss{IC/BC} \le Loss_{pde}
+$$
+$\omega_{ib}$ 是 $\omega_{pde}$ 的100倍，$\omega_{ib}=10$ 是 $\omega_{pde}=0.1$
+
+其中我们记，$G(\theta):=Loss$，$G(\theta)_f:=Loss_{pde}$，$G(\theta)_{IC}:=Loss_{IC/BC}$
+
+![image-20220717091522377](pics\loos_vs_weighted_loss.png)
+
+![image-20220717092014377](pics\zoom_in_density.png)
