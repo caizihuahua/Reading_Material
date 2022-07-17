@@ -111,7 +111,7 @@ $$
 \rho u^2+p \\
 u(\rho E+p)
 \end{pmatrix}
-= 0, \quad E = \frac{p}{\rho(\gamma-1)}+\frac{1}{2}||u||^2, \quad \gamma=1.4 \\
+= 0, \quad E = \frac{p}{\rho(\gamma-1)}+\frac{1}{2}||u||^2, \quad \gamma=1.4 \\
 $$
 考虑空间为 $(0,1)$，边值 $BC$ 为 Dirichlet 边值条件
 $$
@@ -287,9 +287,9 @@ $$
 
 <img src="pics\new_weighted_pinn_problem_setting.png" alt="image-20220717095448810" style="zoom:50%;" />
 
-![image-20220717095357864](pics\new_weighted_pinn.png)
+<img src="pics\new_weighted_pinn.png" alt="image-20220717095357864" style="zoom: 50%;" />
 
-![image-20220717095729260](pics\new_weighted_pinn_vs_origin_pinn.png)
+<img src="pics\new_weighted_pinn_vs_origin_pinn.png" alt="image-20220717095729260" style="zoom:50%;" />
 
 
 
@@ -303,14 +303,16 @@ $$
 \end{aligned}
 $$
 
-$$
-r(x,t) =\partial_tU+\nabla\cdot f(U)-\nu\partial_x^2U
-$$
-
 我们考虑
 $$
 \partial_tU+\nabla\cdot f(U)=\nu\partial_x^2U
 $$
+
+$$
+r(x,t) \triangleq=\partial_tU+\nabla\cdot f(U)-\nu\partial_x^2U
+$$
+
+
 其中 $\nu$ 是可以事先指定，也可以通过网络学习。
 $$
 Loss_{pde} = MSE_{pde}
@@ -323,7 +325,9 @@ $$
 
 我们在计算误差时候考虑，这样的控制方程
 
-![image-20220717110746580](pics\bburgers_with_av_result.png)
+<img src="pics\bburgers_with_av_result.png" alt="image-20220717110746580" style="zoom:80%;" />
+
+> 如何调整人工粘滞系数
 
 #### 2.1 全局可学习的人工粘滞项 （Learnable Global Artificial Viscosity)
 
@@ -331,9 +335,19 @@ $$
 
 #### 2.2 带参数的人工粘滞项（Parametric Artificial Viscosity Map）
 
+> 只在激波处增加人工粘滞项
+
 ![image-20220717114643177](pics\parametric_av.png)
 
 ![image-20220717114814115](pics\parametrix_av_figure.png)
+
+预先知识：**一个激波** 
+
+**$\nu$ 高斯分布**（均值在间断点，方差 $\omega_\nu$ ），在间断点附近有粘滞项，其他地方很小
+
+$\theta$ 记录列如：间断点发生点（截距），间断点传播速度（斜率）等等，这些是需要学习的
+
+圆点表示我们的 **数据增强点**，颜色代表 **粘滞系数** 
 
 #### 4.3 基于残差的人工粘滞项（Residual-Based Artificial Viscosity Map）
 
